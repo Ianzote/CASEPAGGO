@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+build/
+.vercel/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+.env
+.env.local
+.env.production
+*.csv
