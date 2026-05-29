@@ -13,6 +13,25 @@ export async function GET(request: Request) {
   const from = (page - 1) * itemsPerPage;
   const to = from + itemsPerPage - 1;
 
+  // Validar que Supabase está configurado
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    console.error("❌ Supabase not configured - missing environment variables");
+    return NextResponse.json(
+      {
+        error:
+          "Supabase configuration missing. Check environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        data: [],
+        page,
+        totalPages: 0,
+        totalItems: 0,
+      },
+      { status: 500 },
+    );
+  }
+
   try {
     let query = supabase.from("skus").select("*", { count: "exact" });
 
@@ -51,7 +70,7 @@ export async function GET(request: Request) {
     console.error("API error:", err);
     return NextResponse.json(
       {
-        error: "Erro interno no servidor",
+        error: `Erro interno no servidor: ${err instanceof Error ? err.message : "Unknown error"}`,
         data: [],
         page,
         totalPages: 0,

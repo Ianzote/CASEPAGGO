@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Impacto Financeiro - Análise de Risco</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .big-number {
+            font-size: 3.5em;
+            font-weight: bold;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card.danger {
+            background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);
+            color: white;
+            border-left: 5px solid #c53030;
+        }
+        
+        .card.warning {
+            background: linear-gradient(135deg, #ed8936 0%, #f6ad55 100%);
+            color: white;
+            border-left: 5px solid #c05621;
+        }
+        
+        .card.info {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            border-left: 5px solid #2c5aa0;
+        }
+        
+        .card-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .card-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .card-subtitle {
+            font-size: 0.85em;
+            opacity: 0.85;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            position: relative;
+            height: 400px;
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        
+        table.dataTable thead th {
+            background-color: #f7fafc;
+            color: #2d3748;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table.dataTable tbody td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .valor-grande {
+            color: #e53e3e;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .insights {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+            border-left: 5px solid #4299e1;
+        }
+        
+        .insights h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .insights ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .insights li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #4a5568;
+        }
+        
+        .insights li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            color: #4299e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 IMPACTO FINANCEIRO</h1>
+            <p>Quanto você deixaria de ganhar se não tomar cuidado com seus dados</p>
+            <div class="big-number">R$ 14,724,736.28</div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card danger">
+                <div class="card-label">⚠️ Perda por Falta de Estoque</div>
+                <div class="card-value">R$ 11,457,678.16</div>
+                <div class="card-subtitle">Vendas que você não conseguiria fazer</div>
+            </div>
+            
+            <div class="card warning">
+                <div class="card-label">🧟 Lucro Travado em Zumbis</div>
+                <div class="card-value">R$ 3,267,058.12</div>
+                <div class="card-subtitle">Produtos parados sem vender há 60+ dias</div>
+            </div>
+            
+            <div class="card info">
+                <div class="card-label">📊 Produtos em Risco</div>
+                <div class="card-value">835</div>
+                <div class="card-subtitle">Podem faltar estoque em breve</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">📈 Composição do Impacto Financeiro</div>
+            <canvas id="impactoChart"></canvas>
+        </div>
+        
+        <div class="table-container">
+            <h3 style="margin-bottom: 20px; color: #2d3748;">Top 15 Produtos com Maior Impacto Financeiro</h3>
+            <table border="1" class="dataframe dataTable" id="impactoTable">
+  <thead>
+    <tr style="text-align: right;">
+      <th>skuId</th>
+      <th>skuName</th>
+      <th>impacto_total</th>
+      <th>vendas_perdidas_lucro</th>
+      <th>lucro_perdido_zumbi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>SKU-007921</td>
+      <td>Furadeira Fresh unidade</td>
+      <td>268830.3600</td>
+      <td>268830.3600</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-013528</td>
+      <td>Tênis Plus GG</td>
+      <td>245785.6350</td>
+      <td>245785.6350</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-008974</td>
+      <td>Óleo motor Premium 4L</td>
+      <td>240346.1760</td>
+      <td>240346.1760</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-008835</td>
+      <td>Filtro de ar Mini unidade</td>
+      <td>192042.0600</td>
+      <td>192042.0600</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-007552</td>
+      <td>Martelo Aurora kit</td>
+      <td>122607.6240</td>
+      <td>122607.6240</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-013414</td>
+      <td>Meia Pro P</td>
+      <td>119397.8016</td>
+      <td>119397.8016</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-009129</td>
+      <td>Desodorante Original 200ml</td>
+      <td>114618.4830</td>
+      <td>114618.4830</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-013954</td>
+      <td>Cabo Nordeste unidade</td>
+      <td>112653.1266</td>
+      <td>112653.1266</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-011384</td>
+      <td>Mouse Pro unidade</td>
+      <td>112422.9218</td>
+      <td>112422.9218</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-013305</td>
+      <td>Chave de fenda Plus kit</td>
+      <td>111869.1450</td>
+      <td>111869.1450</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-014281</td>
+      <td>Bermuda PrimaCare G</td>
+      <td>109877.7330</td>
+      <td>109877.7330</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-013756</td>
+      <td>Pastilha de freio Eco 4L</td>
+      <td>109023.9654</td>
+      <td>109023.9654</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-009139</td>
+      <td>Camiseta Fresh M</td>
+      <td>105789.3585</td>
+      <td>105789.3585</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-007681</td>
+      <td>Cabo Silver pacote 2</td>
+      <td>101976.8850</td>
+      <td>101976.8850</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>SKU-014908</td>
+      <td>Furadeira Nordeste kit</td>
+      <td>95702.5580</td>
+      <td>95702.5580</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+        
+        <div class="insights">
+            <h3>💡 Recomendações</h3>
+            <ul>
+                <li><strong>Revise produtos em risco:</strong> 835 produtos podem faltar em breve</li>
+                <li><strong>Limpe produtos zumbis:</strong> 574 produtos parados representam R$ 4,206,801.68 investidos sem retorno</li>
+                <li><strong>Acompanhe estoque:</strong> Use os dados para fazer reposições preventivas</li>
+                <li><strong>Analise sazonalidade:</strong> Prepare-se para picos de demanda sazonal</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        const ctx = document.getElementById('impactoChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Perda por Falta de Estoque', 'Lucro Travado em Zumbis'],
+                datasets: [{
+                    data: [11457678.1557, 3267058.12],
+                    backgroundColor: ['#f56565', '#ed8936'],
+                    borderColor: 'white',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: { size: 14 },
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'R$ ' + context.parsed.toLocaleString('pt-BR', {maximumFractionDigits: 2});
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // DataTable
+        $(function () {
+            $('#impactoTable').DataTable({
+                paging: true,
+                pageLength: 15,
+                ordering: true,
+                searching: true,
+                language: {
+                    search: '🔍 Buscar:',
+                    lengthMenu: 'Mostrar _MENU_ registros',
+                    info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
+                    paginate: {
+                        first: '«',
+                        last: '»',
+                        next: '›',
+                        previous: '‹'
+                    }
+                },
+                columnDefs: [{
+                    targets: [2, 3, 4],
+                    render: function(data) {
+                        return 'R$ ' + parseFloat(data).toLocaleString('pt-BR', {maximumFractionDigits: 2});
+                    }
+                }]
+            });
+        });
+    </script>
+</body>
+</html>
