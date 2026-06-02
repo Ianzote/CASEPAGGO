@@ -4,6 +4,33 @@ import React, { useEffect, useState, useRef } from "react";
 
 type SKU = { [key: string]: any };
 
+function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 1) return [1];
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | "ellipsis")[] = [1];
+
+  let start = Math.max(2, current - 1);
+  let end = Math.min(total - 1, current + 1);
+
+  if (current <= 3) {
+    start = 2;
+    end = 4;
+  } else if (current >= total - 2) {
+    start = total - 3;
+    end = total - 1;
+  }
+
+  if (start > 2) pages.push("ellipsis");
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push("ellipsis");
+  pages.push(total);
+
+  return pages;
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<SKU[]>([]);
   const [page, setPage] = useState<number>(1);
@@ -57,8 +84,7 @@ export default function DashboardPage() {
     return "bg-green-100 text-green-800";
   };
 
-  const goPrev = () => setPage((p) => Math.max(1, p - 1));
-  const goNext = () => setPage((p) => Math.min(totalPages || 1, p + 1));
+  const pageNumbers = getPageNumbers(page, totalPages || 1);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full max-w-full overflow-x-hidden font-sans">
@@ -205,27 +231,41 @@ export default function DashboardPage() {
                   </table>
                 </div>
 
-                {/* PAGINAÇÃO */}
+                {/* PAGINAÇÃO NUMÉRICA */}
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-gray-500">
-                    Mostrando página {page} de {totalPages}
+                    Página {page} de {totalPages}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={goPrev}
-                      disabled={page <= 1}
-                      className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Anterior
-                    </button>
-                    <button
-                      onClick={goNext}
-                      disabled={page >= totalPages}
-                      className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Próximo
-                    </button>
-                  </div>
+                  <nav
+                    className="flex flex-wrap items-center justify-center gap-1 sm:justify-end"
+                    aria-label="Paginação de SKUs"
+                  >
+                    {pageNumbers.map((item, idx) =>
+                      item === "ellipsis" ? (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-2 py-2 text-sm text-gray-400 select-none"
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setPage(item)}
+                          disabled={loading || item === page}
+                          aria-current={item === page ? "page" : undefined}
+                          className={`min-w-[2.5rem] rounded-xl px-3 py-2 text-sm font-medium transition ${
+                            item === page
+                              ? "bg-indigo-600 text-white shadow-sm cursor-default"
+                              : "border border-gray-200 bg-white text-gray-700 shadow-sm hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ),
+                    )}
+                  </nav>
                 </div>
               </div>
             </main>
