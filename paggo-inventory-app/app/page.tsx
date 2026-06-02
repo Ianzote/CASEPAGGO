@@ -367,9 +367,9 @@ export default function DashboardPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
               {messages.length === 0 ? (
                 <div className="text-center py-8 px-4">
-                  <p className="text-sm font-medium text-gray-700">Olá! Eu sou o SOL. 🫡</p>
+                  <p className="text-sm font-medium text-gray-700">Olá! Eu sou o SOL.</p>
                   <p className="mt-1 text-xs text-gray-500">
-                    Estou munido com a análise de risco e impacto financeiro do estoque. Pode me fazer perguntas analíticas!
+                    Diga oi para começar. Quando quiser dados do estoque, peça direto — por exemplo: quantos itens críticos tem?
                   </p>
                 </div>
               ) : (
