@@ -77,10 +77,25 @@ function mentionsIdentity(msg: string) {
 }
 
 function wantsInsight(msg: string) {
-  return (
-    /\b(qual|quais|que item|qual item|mais critico|maior risco|pior|mais urgente|destaque)\b/.test(msg) &&
-    (mentionsCritical(msg) || /\b(item|sku|produto)\b/.test(msg) || extractCategory(msg) !== null)
-  );
+  const category = extractCategory(msg);
+
+  // Ex.: "qual o item FOOD mais crítico atual?"
+  if (
+    category &&
+    /\b(mais critico|maior risco|pior|mais urgente|item mais|sku mais|mais grave)\b/.test(msg)
+  ) {
+    return true;
+  }
+
+  if (/\b(qual|quais)\b/.test(msg) && (/\b(item|sku|produto)\b/.test(msg) || mentionsCritical(msg) || category)) {
+    return true;
+  }
+
+  if (/\b(que item|qual item)\b/.test(msg) && (mentionsCritical(msg) || category)) {
+    return true;
+  }
+
+  return false;
 }
 
 function wantsStrategy(msg: string) {
@@ -111,7 +126,8 @@ function classifyMessage(message: string): MessageIntent {
     wantsCount(msg) ||
     wantsFullList(msg) ||
     /\b(me (diga|fale|passa|mostra)|informe|traga|preciso saber)\b/.test(msg) ||
-    (mentionsCritical(msg) && /\b(quantos|lista|liste|top|piores|tem|ha)\b/.test(msg));
+    // Sem \btem\b/\bha\b — geravam falso positivo em "item"/"atual"
+    (mentionsCritical(msg) && /\b(quantos|qtd|lista|liste|top|piores)\b/.test(msg));
 
   if (asksData) return 'data';
   if (wantsStrategy(msg)) return 'strategy';
@@ -343,7 +359,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Mensagem não fornecida' }, { status: 400 });
     }
 
-    const intent = classifyMessage(String(message));
+    let intent = classifyMessage(String(message));
+    const msgNorm = normalize(String(message));
 
     if (intent === 'greeting') return NextResponse.json({ reply: INTRO_REPLY });
     if (intent === 'thanks') {
@@ -351,10 +368,14 @@ export async function POST(request: Request) {
     }
     if (intent === 'help') return NextResponse.json({ reply: INTRO_REPLY });
     if (intent === 'chat') {
-      return NextResponse.json({
-        reply:
-          'Posso responder perguntas abertas também — por exemplo: *qual o item APPAREL mais crítico?* ou *qual estratégia usar para reduzir rupturas?*',
-      });
+      if (wantsStrategy(msgNorm)) intent = 'strategy';
+      else if (wantsInsight(msgNorm)) intent = 'insight';
+      else {
+        return NextResponse.json({
+          reply:
+            'Posso responder perguntas abertas — por exemplo: *qual o item FOOD mais crítico?* ou *qual estratégia para reduzir rupturas?*',
+        });
+      }
     }
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -364,7 +385,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const msgNorm = normalize(String(message));
     const category = extractCategory(String(message));
     const needsList =
       intent === 'data' &&
