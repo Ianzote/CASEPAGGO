@@ -18,22 +18,33 @@ type SkuRow = {
   score_risco: number;
 };
 
-async function countSkus(filter: (q: ReturnType<typeof supabase.from>) => ReturnType<typeof supabase.from>) {
-  let query = supabase.from('skus').select('*', { count: 'exact', head: true });
-  query = filter(query);
-  const { count, error } = await query;
-  if (error) throw error;
-  return count ?? 0;
-}
-
 async function fetchInventoryStats() {
-  const [critical, alert, stable, total] = await Promise.all([
-    countSkus((q) => q.gte('score_risco', CRITICAL_MIN)),
-    countSkus((q) => q.gte('score_risco', ALERT_MIN).lt('score_risco', CRITICAL_MIN)),
-    countSkus((q) => q.lt('score_risco', ALERT_MIN)),
-    countSkus((q) => q),
+  const [criticalRes, alertRes, stableRes, totalRes] = await Promise.all([
+    supabase
+      .from('skus')
+      .select('*', { count: 'exact', head: true })
+      .gte('score_risco', CRITICAL_MIN),
+    supabase
+      .from('skus')
+      .select('*', { count: 'exact', head: true })
+      .gte('score_risco', ALERT_MIN)
+      .lt('score_risco', CRITICAL_MIN),
+    supabase
+      .from('skus')
+      .select('*', { count: 'exact', head: true })
+      .lt('score_risco', ALERT_MIN),
+    supabase.from('skus').select('*', { count: 'exact', head: true }),
   ]);
-  return { critical, alert, stable, total };
+
+  const firstError = criticalRes.error ?? alertRes.error ?? stableRes.error ?? totalRes.error;
+  if (firstError) throw firstError;
+
+  return {
+    critical: criticalRes.count ?? 0,
+    alert: alertRes.count ?? 0,
+    stable: stableRes.count ?? 0,
+    total: totalRes.count ?? 0,
+  };
 }
 
 async function fetchTopCritical(limit = 10) {
